@@ -1,0 +1,62 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+public class HaloSpawner : MonoBehaviour
+{
+    public GameObject haloPrefab; // Assign the halo prefab in the Inspector
+    public AudioSource musicSource; // The audio source playing the music
+    public Vector3 initialPosition = new Vector3(0, 10, 20); // Starting position for the first halo, with Z offset to spawn in front
+    public float rotationX = 0f; // Rotation of the halos around X axis
+    public float rotationY = 0f; // Rotation of the halos around Y axis
+    public float rotationZ = 0f; // Rotation of the halos around Z axis
+    public float randomOffsetX = 5.0f; // Maximum random offset for X axis
+    public float distanceBetweenHalos = 20.0f; // Distance between each halo (adjusted to ensure it's in front of the ball)
+    public float spawnInterval = 1.0f; // Time between spawns
+    public int maxActiveHalos = 5; // Maximum number of active halos at a time
+    private List<GameObject> halos = new List<GameObject>();
+    private float lastSpawnTime;
+    private Transform ballTransform;
+
+    void Start()
+    {
+        // Reference to the ball's transform
+        ballTransform = GameObject.FindWithTag("Player").transform;
+
+        // Start spawning halos
+        StartCoroutine(SpawnHalos());
+    }
+
+    IEnumerator SpawnHalos()
+    {
+        while (true)
+        {
+            if (Time.time - lastSpawnTime >= spawnInterval && halos.Count < maxActiveHalos)
+            {
+                SpawnHalo();
+                lastSpawnTime = Time.time;
+            }
+            yield return null;
+        }
+    }
+
+    void SpawnHalo()
+    {
+        // Apply random offset to X position
+        Vector3 randomOffset = new Vector3(
+            Random.Range(-randomOffsetX, randomOffsetX),
+            0,
+            0
+        );
+
+        // Spawn position is in front of the ball's current position
+        Vector3 spawnPosition = ballTransform.position + new Vector3(randomOffset.x, initialPosition.y, initialPosition.z);
+
+        Quaternion haloRotation = Quaternion.Euler(rotationX, rotationY, rotationZ);
+        GameObject halo = Instantiate(haloPrefab, spawnPosition, haloRotation);
+        halos.Add(halo);
+
+        // Remove halos that go too far down (out of the screen)
+        halos.RemoveAll(h => h.transform.position.y < -10);
+    }
+}
